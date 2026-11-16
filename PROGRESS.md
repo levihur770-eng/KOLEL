@@ -28,7 +28,7 @@ Short on purpose: what is true now and what comes next. Full history:
 
 | Version | Checkpoint | What | Levi's verdict |
 |---------|------------|------|----------------|
-| v1.0 | tag `v1.0` (see git) | Stage 0 + Stage 1: register, past sessions, students and classes, backup, offline | not tested yet |
+| v1.0 | commit `dd2161a` (tags cannot be pushed from cloud sessions) | Stage 0 + Stage 1: register, past sessions, students and classes, backup, offline | not tested yet |
 
 ## Decisions made while building (Levi may reverse any; ask before undoing)
 
