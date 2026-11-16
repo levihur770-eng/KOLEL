@@ -1,0 +1,329 @@
+KOLEL REGISTER - BUILD BRIEF FOR CLAUDE CODE
+Written 2026-11-17 in a planning chat (Claude Fable 5.2) with Levi.
+Working name of the app: "Kolel Register" (Levi may rename it).
+
+TO CLAUDE CODE: THIS FILE IS YOUR INSTRUCTION. START NOW.
+Levi attached this file instead of typing a prompt. Do not wait for more:
+do the setup below, then Stage 0 and Stage 1 (section 8).
+If a file KOLEL-ANSWERS.txt is also attached or in the folder, its answers
+override the DEFAULTS in section 9. If not, use the defaults; do not stop
+to ask about them.
+
+SETUP - YOU DO IT, NOT LEVI
+Levi is a beginner with GitHub and does not know how to make a repository.
+Last time (The Folio) Claude Code did all of it for him. Do the same:
+1. In your FIRST message, ask for every permission and connection you will
+   need, all at once (GitHub access, creating a repository, running
+   commands, a browser preview). Levi may not be watching later.
+2. Save this file into the project folder as KOLEL-BUILD-BRIEF.txt.
+3. Make the project a git repository and create a private GitHub repository
+   named kolel-register under Levi's account (levihur770-eng), and push to
+   it. Use whatever this session offers (a repository tool, the gh command,
+   the GitHub connection). If the session is already attached to an empty
+   repository or folder, use that one instead and do not create a second.
+4. Only if you truly cannot create the repository yourself: give Levi
+   numbered steps, one click per line, with the exact link for each, and
+   keep building locally meanwhile so no time is lost.
+5. Netlify comes at the end of Stage 1, not now. Then guide him click by
+   click with links (he has a Netlify account from The Folio).
+
+
+1. WHO LEVI IS AND HOW TO WORK WITH HIM
+
+- Levi is a teacher, not a programmer. Explain in plain words, one step at a
+  time. No compliments. Do the technical and tedious steps yourself.
+- Anything only he can do: numbered steps, one action per line, with the
+  exact link or path.
+- He built an earlier app ("The Folio", repo levihur770-eng/folio-app) with
+  Claude Code. The working method from that project suited him. Copy it:
+    CLAUDE.md          short notes for Claude: read order, rules, commands
+    PROGRESS.md        short: what is true now, decisions, next step, versions
+    PROGRESS-ARCHIVE.md full history; old rounds move here so PROGRESS stays short
+    FEATURE-MAP.md     which file does which feature (kept up to date)
+    IDEAS.md           ideas Levi wants kept but not built yet
+    test-latest.bat    double-click on Windows: fetches the newest branch from
+                       GitHub, runs npm install, starts the app in Chrome on
+                       http://localhost:5173
+- Versions: each round Levi tests gets a version number (v1.0, v1.1 ...) shown
+  in the app's About box and listed in PROGRESS.md with its git tag
+  ("checkpoint"). Work happens on a branch; "update the main" from Levi means:
+  put the version he just tested on main. Nothing goes on main before that.
+  Netlify publishes main automatically.
+- EVERY message to Levi ends with a line "NEXT:" that is one of these two:
+    "NEXT: answer in this chat." (when you need his reply or the work
+    continues here), or
+    "NEXT: a new chat is fine / better, because ..." and then a ready-made
+    file for it: write NEXT-CHAT-PROMPT.txt (what to read, what to do next,
+    anything to connect) into the project folder and hand it to him as a
+    file, so he only attaches it in the new chat. Never ask him to copy text
+    out of the chat.
+- Fixing problems: find the cause, fix the rule, no forced patches, add a test
+  that would have caught it, write it down in PROGRESS.md.
+- The first build may be done by a stronger model than the later rounds.
+  Therefore: write the project notes so that a weaker model, with no memory of
+  this session, can make changes safely.
+
+
+2. WHAT THE APP IS FOR
+
+Levi teaches in a Kolel (a Jewish adult-education programme, Budapest).
+Attendance is taken on paper and he often forgets it. He wants a phone-first
+attendance register whose main purpose is to make students more accountable
+and punctual, and which also gives an administrator a usable monthly report.
+
+His class has no reliable start time (it depends on when the previous
+teacher finishes), so the register must work from the moment he presses
+"Start class", not from a timetable.
+
+Two levels:
+  SIMPLE (Stages 1-2): one teacher, one device, no login, no internet needed.
+    He exports a monthly report and sends it to the principal himself.
+  SCHOOL (Stage 3): Google login. A principal opens a "school" and adds
+    students (name + photo). Teachers join the school and run classes inside
+    it. The principal downloads everything for the month.
+
+
+3. PRINCIPLES (decided; do not undo without asking Levi)
+
+P1. Record facts, compute judgements later. Store raw times (when class
+    started, when each student was ticked). "On time", "late by 12 min",
+    "absent" are calculated when a report is made, never stored. This lets
+    rules change later (e.g. a grace period) without touching old data.
+P2. "Not recorded" is never "absent". If Levi took no register, or no
+    end-of-class register, the report says "not recorded" and the student's
+    percentages ignore that session. Nobody is punished for the teacher
+    forgetting.
+P3. Sessions exist only when a teacher creates one. There is no calendar of
+    expected lessons, so holidays, Shabbat, and cancelled classes need no
+    handling at all.
+P4. Simple code beats clever code. Few dependencies. If a feature needs a
+    complicated mechanism for a small benefit, put it in IDEAS.md instead.
+P5. The statistics are plain arithmetic done inside the app. No AI is needed
+    for the monthly report (see section 7).
+P6. Every screen a teacher uses during class must work with one thumb, in
+    under 20 seconds for a whole class, and without internet.
+
+
+4. TECHNICAL DECISIONS (with the reason, in plain words)
+
+- A website that can be installed on the phone's home screen (a "PWA"), not
+  an Android/iPhone app. Reason: no app stores, one codebase, updates arrive
+  by themselves. Same approach as The Folio.
+- Vite + React + TypeScript, tests with Vitest, lint with oxlint. Hosted on
+  Netlify from GitHub. Same tools as The Folio, so nothing new for Levi.
+- Service worker so the app opens and works offline (copy the approach in
+  folio-app: src/serviceWorker.js, src/useAppUpdate.ts, netlify.toml headers).
+- Stage 1-2 data: in the phone's own browser storage (IndexedDB), plus a
+  "Save backup file" / "Open backup file" button (.json).
+- Stage 3 data: Firebase (Google's service). Firebase Authentication for
+  "Sign in with Google", Firestore as the shared database.
+  Why Firebase and not Supabase:
+    a) Firestore keeps working offline by itself and syncs when the signal
+       returns. A classroom with bad reception is the normal case here.
+    b) Supabase's free plan pauses a project after about a week without
+       activity; a school holiday would switch the app off.
+    c) Firebase's free "Spark" plan needs no payment card and cannot produce
+       a bill; when a quota runs out it stops until the next day. This app
+       will use a tiny fraction of the quota (50,000 reads and 20,000 writes
+       a day).
+  Check the current Firebase limits on https://firebase.google.com/pricing
+  before Stage 3; they change.
+- Photos: Firebase's file storage ("Cloud Storage") is no longer on the free
+  plan (since February 2026). So do NOT use it. Shrink each student photo in
+  the browser to a small square (about 160 x 160 px JPEG, roughly 10-15 KB)
+  and store it as text inside the student's database record. Keep photos in
+  their own records, separate from attendance records, so lists load fast.
+- The storage layer sits behind ONE small interface (e.g. src/data/store.ts:
+  listStudents, saveSession, ...). Stage 1 implements it with IndexedDB;
+  Stage 3 adds a Firestore implementation. Screens never talk to storage
+  directly. This is what makes the move from SIMPLE to SCHOOL cheap.
+- All rules that turn facts into judgements (status, lateness, statistics)
+  are pure functions in one folder (src/logic/) with unit tests. This is the
+  part later changes are most likely to break; the tests protect it.
+- All text the user sees lives in one file (src/text/en.ts) so Hebrew or
+  Hungarian can be added later. Names may be in Hebrew letters: render names
+  with dir="auto".
+- Times: store exact moments (UTC timestamps) plus the local date string
+  (Europe/Budapest) on each session.
+
+
+5. THE DATA (same shape in Stage 1 and Stage 3)
+
+school     { id, name, settings }
+           settings: graceMinutes (default 0), teachersMayCreateClasses (true),
+           teachersMayAddStudents (true), lateReference ("actualStart")
+member     { userId, name, email, role: "principal" | "teacher", approved }
+           (Stage 3 only)
+student    { id, name, active, joinedDate, note? }
+photo      { studentId, jpegText }              (separate record)
+class      { id, name, teacherIds[], studentIds[], usualStart? ("20:30"),
+             usualLengthMinutes?, archived }
+session    { id, classId, teacherId, localDate,
+             scheduledStart?      copied from class.usualStart
+             openedAt             when the register screen was opened
+             startedAt?           when "Start class" was pressed (may be absent:
+                                  register taken without pressing Start)
+             endedAt?             when "End class" was pressed
+             endCheckTaken        true only if the end-of-class register was done
+             marks: { [studentId]: mark }
+             note? }
+mark       { arrivedAt?           moment the student was ticked present
+             timeUnknown?         true = present, but ticked afterwards
+                                  ("I forgot, he was there")
+             absent?              true = explicitly marked absent
+             excused?, reason?    absence or lateness excused
+             leftAt?              left early
+             endPresent?          true/false; only meaningful if endCheckTaken
+             editedAt? }
+A student with no mark in a session that has marks for others = "absent
+(not ticked)". A session with no marks at all = "not recorded".
+One session is ONE database record containing all its marks (classes are
+small). One save per change, works offline, cheap.
+
+Status of a student in a session (computed, src/logic/status.ts):
+  no register taken            -> not recorded (ignored in percentages)
+  arrivedAt <= startedAt (+ grace), or ticked before Start was pressed
+                               -> on time
+  arrivedAt later              -> late, N minutes (measured from startedAt)
+  timeUnknown                  -> present, time unknown (counts as present,
+                                  ignored in punctuality figures)
+  startedAt missing            -> present / absent only, no lateness
+  absent or not ticked         -> absent (excused or not)
+
+
+6. SCREENS
+
+A. Home: list of my classes, each with a big "Take register" button. Shows
+   an unfinished session if there is one ("Class in progress since 20:47").
+B. Register (the main screen): grid of the class's students, photo + name,
+   large tiles. Tap = present (records the time). Tap again = menu: absent /
+   excused / change time / left early / undo. A large "START CLASS" button at
+   the top. Before Start: ticks count as on time. After Start: the button
+   becomes a running clock ("Class started 20:47 - 0:23 so far") and every new
+   tick is stamped as a late arrival with the minutes shown on the tile.
+   "End class" at the bottom, with an optional "Take end-of-class register"
+   (same grid, tick who is still there). Skipping it records nothing.
+   Everything saves instantly; closing the phone loses nothing.
+   Small conveniences: "Everyone here" button; change the start time by hand
+   ("I pressed it 5 minutes late"); if usualLengthMinutes is set, the clock
+   turns red when the class runs over (Levi says he tends to run over time).
+C. Past sessions: list by date; open one to correct it. Corrections are
+   allowed and stamped with editedAt.
+D. Students and classes: add / edit / archive; photo from camera or gallery;
+   paste a list of names to add many at once.
+E. Reports: choose class(es) and a date range (default: this month).
+   - Per student: sessions recorded, present, on time, late, average minutes
+     late, absent, excused, left early; attendance % and punctuality %.
+   - Per class: sessions held, average attendance, average start delay
+     against usualStart (can be hidden, see question Q7).
+   - "Worth a look" list: plain sentences made from fixed rules (section 7).
+   - Buttons: Download Excel (.xlsx, one sheet per view), Print / Save as PDF
+     (A4 portrait), "Student slip" (one small card per student for the month,
+     to show or send to the student).
+F. Settings: grace minutes, backup file save/open, language (later), About
+   (version number).
+Stage 3 adds: Sign in with Google; Create a school / Join a school with a
+code; principal's page (approve teachers, see all classes, whole-school
+report, completeness: which teachers recorded how many sessions).
+
+
+7. THE ANALYSIS (inside the app, no AI)
+
+Numbers are small (one Kolel), so statistics must be modest and honest:
+- attendance % = present / recorded sessions; punctuality % = on time /
+  present-with-known-time; average and median minutes late.
+- comparison with the previous period (arrow up / down / same).
+- current streak of on-time arrivals and best streak (the main lever for
+  accountability: visible, personal, positive).
+- "Worth a look" rules, each a fixed sentence, each with a minimum amount of
+  data so the app never invents a pattern from three lessons:
+    3 or more absences in a row
+    attendance below 70% over at least 6 recorded sessions
+    late in more than half of at least 6 sessions
+    lateness getting worse: second half of period clearly worse than first
+    one weekday clearly worse than the others (at least 4 sessions on that day)
+  Thresholds are settings in one file (src/logic/thresholds.ts).
+- Never rank students against each other by default.
+
+OPTIONAL, Stage 4, only if Levi still wants it: "Export for AI". One .txt
+file containing instructions for an AI plus the period's data, with students
+replaced by codes (S01, S02 ...). The code list stays in the app. A "Decode"
+box in the app turns pasted AI text back into names. Note for Levi in the
+app: codes reduce the risk but the file is still personal data; do not post
+it anywhere public.
+
+
+8. STAGES
+
+Stage 0 - Foundations: repository, the note files from section 1,
+  test-latest.bat, Netlify config, empty installable app with version number.
+Stage 1 - The Register: screens A-D, IndexedDB storage behind the store
+  interface, backup file, offline. Logic in src/logic with tests. Demo data
+  button ("Load example class") so Levi can try it at once.
+  DONE WHEN: Levi can run a whole lesson on his phone with no internet:
+  tick early students, press Start, tick latecomers with minutes shown, end
+  class with and without the end register, correct yesterday's session.
+Stage 2 - The Report: screen E, Excel and PDF export, student slips,
+  "Worth a look".
+  DONE WHEN: a month of example data gives a report an administrator can
+  read without explanation, and "not recorded" sessions punish nobody.
+Stage 3 - The School: Firebase, Google login, schools, roles, join code with
+  principal's approval, Firestore implementation of the store, security
+  rules, "Move my data on this phone into the school".
+  Security rules (who may read or write what) are the highest-risk part of
+  the whole project: a mistake exposes students' names and photos. Rules:
+    - nobody outside the school reads anything
+    - teachers read the roster; write sessions only for their own classes
+    - only the principal approves members, removes students, reads all
+    - write automated tests for the rules (Firebase emulator) covering each
+      "must not be allowed" case, and list them in PROGRESS.md
+  Levi does the Firebase console clicks; give him numbered steps with links.
+  The Firebase project should belong to a Google account owned by the
+  institution, not Levi's private one (see Q10).
+  DONE WHEN: principal and two teachers on three devices/accounts each see
+  only what they should, and a register taken offline appears for the
+  principal after the signal returns.
+Stage 4 - Extras, each only if Levi asks: Export for AI, Hebrew / Hungarian
+  interface, students seeing their own record, reminders, marks.
+
+How hard is it: Stages 0-2 are easy (far simpler than The Folio's layout
+engine). Stage 3 is moderate; the work is setup and getting the rules right,
+not volume of code.
+
+
+9. OPEN QUESTIONS AND THEIR DEFAULTS
+(KOLEL-ANSWERS.txt overrides these. Stage 1 does not depend on Q5-Q12.)
+
+Q1  Language of the interface.               DEFAULT: English; Hebrew names OK.
+Q2  Lateness measured from "Start class"
+    or from the timetable time.              DEFAULT: from "Start class".
+Q3  Grace period before "late".              DEFAULT: 0 minutes (setting).
+Q4  Is running over time something the app
+    should show.                             DEFAULT: yes, clock turns red.
+Q5  Are any students under 18.               DEFAULT: adults only; if minors,
+                                             add a parents' notice to Stage 3.
+Q6  Is attendance tied to money (stipends)
+    or certificates.                         DEFAULT: no. If yes: lock sessions
+                                             after 7 days and keep a change log.
+Q7  May the report show how late the class
+    itself started against the timetable.    DEFAULT: recorded, hidden in the
+                                             principal's report.
+Q8  How students see their own record.       DEFAULT: monthly student slip
+                                             Levi shows or sends; no student
+                                             accounts.
+Q9  Who adds students in a school.           DEFAULT: principal and teachers
+                                             (setting).
+Q10 Whose Google account owns the Firebase
+    project.                                 DEFAULT: ask before Stage 3.
+Q11 Photos: is there permission to store
+    them.                                    DEFAULT: photos optional; initials
+                                             shown when there is none.
+Q12 How long records are kept.               DEFAULT: until deleted by the
+                                             principal; "Delete a student's
+                                             data" button exists from Stage 3.
+Q13 What "Clever Bees" does that Levi
+    liked (the planning chat could not find
+    a product of that name).                 DEFAULT: ignore.
+Q14 Does the institution already pay for
+    a system that records attendance.        DEFAULT: unknown; build Stage 1-2
+                                             anyway (small cost).
